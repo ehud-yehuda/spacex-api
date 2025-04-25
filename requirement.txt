@@ -2,3 +2,7 @@ requests
 psycopg2-binary 
 trino
 pydantic
+pandas
+matplotlib
+seaborn
+psycopg2-binary

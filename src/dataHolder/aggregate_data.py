@@ -1,0 +1,67 @@
+from data_holder_interface import dataHolderInterface
+from models import Launch
+from dataclasses import dataclass, field
+import time
+
+@dataclass
+class aggregateData(dataHolderInterface):
+    table_name: str = "aggregate_data_table"
+    columns_type: dict = field(default_factory=lambda: {
+        "timestamp": 'TIMESTAMPTZ PRIMARY KEY',
+        "total_launches": 'INTEGER NOT NULL',
+        "successful_launches": 'INTEGER NOT NULL',
+        "avg_payload_mass": 'NUMERIC',
+        "avg_launch_delay_minutes": 'NUMERIC',
+        "data_as_json": 'JSONB NOT NULL'
+    })
+    total_launches: int = 0
+    total_successfull_launches: int = 0
+    avg_payload_mass: float = 0.0
+    avg_launch_delay: float = 0.0
+    total_payload_mass: float = 0.0
+    total_delay: float = 0.0
+
+     
+
+    def update(self, is_successfull: bool, payload_mass: float, delay_time:float, launch_id: int) -> dict:
+        self.total_launches += 1
+        self.total_successfull_launches += 1 if is_successfull else 0
+        self.total_payload_mass += payload_mass
+        self.total_delay += delay_time
+        self.compute_avg_metrics()
+        self.data_as_json = {
+            "launch_id_updated": launch_id,
+            "is_successfull": is_successfull,
+            "payload_mass": payload_mass,
+            "delay_time": delay_time
+        }
+        ret = self.get_data_dict_to_insert_sql_table()
+        return ret
+
+    def extract_data_from_launch_and_update(self, launch_obj: Launch) -> dict:
+        is_successfull = launch_obj.success
+        payload_mass = launch_obj.data_as_json.get("payload_mass_kg", 0.0) #depend on client decision
+        delay_time = launch_obj.data_as_json.get("date_utc", 0.0)  - launch_obj.data_as_json.get("date_local", -1.0)#depend on client decision
+        launch_id = launch_obj.id
+        ret = self.update(is_successfull=is_successfull,
+                    payload_mass=payload_mass,
+                    delay_time=delay_time,
+                    launch_id=launch_id)
+        return ret
+
+    def compute_avg_metrics(self):
+        try:
+            self.avg_payload_mass = self.total_payload_mass / self.total_launches
+            self.avg_launch_delay = self.total_delay / self.total_launches
+        except ZeroDivisionError as e:
+            print("aggregateData::compute_avg_metrics(), cant compute metrics no data stored")
+    
+    def get_all_values(self) -> list:
+        return [
+            time.time(),
+            self.total_launches,
+            self.total_successfull_launches,
+            self.avg_payload_mass,
+            self.avg_launch_delay,
+            self.data_as_json  
+        ]
