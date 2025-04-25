@@ -23,6 +23,9 @@ def main():
     launch_table_configuration_data = launch.get_data_to_create_sql_table()
     db_writer.create_table_in_db(launch_table_configuration_data)
 
+    data_to_store = launch.get_data_dict_to_insert_sql_table()
+    db_writer.insert_data_into_table(data_to_store)
+
 
 
 if __name__ == "__main__":

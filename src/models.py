@@ -5,11 +5,15 @@ from typing import Optional
 
 class Models(BaseModel):
     table_name: str = ""
-    columns_type: dict = {}
+    columns_type: dict = {
+        "data_as_json": 'JSONB NOT NULL'
+    }
+    _raw_json: dict
 
     @classmethod
     def load_from_json(cls, data_as_json: dict) -> Optional["Launch"]:
         try:
+            cls._raw_json = data_as_json
             return cls.model_validate(data_as_json)
         except ValidationError as e:
             print("Models::load_from_json(), Data is not valid")
@@ -18,6 +22,9 @@ class Models(BaseModel):
 
     def get_columns_types(self):
         return list(self.columns_type.values())
+    
+    def get_fields(self):
+        return self.get_columns_names()
 
     def get_columns_names(self):
         return list(self.columns_type.keys())
@@ -27,6 +34,24 @@ class Models(BaseModel):
         ret["table_name"] = self.table_name
         ret["table_columns_names"] = self.get_columns_names()
         ret["table_columns_types"] = self.get_columns_types()
+        return ret
+    
+    def get_all_values(self) -> list:
+        return [
+            self.id,
+            self.name,
+            self.date_utc,
+            self.success,
+            self.rocket,
+            self.details,
+            self._raw_json  
+        ]
+    
+    def get_data_dict_to_insert_sql_table(self) -> dict:
+        ret = {}
+        ret["table_name"] = self.table_name
+        ret["values"] = self.get_all_values()
+        ret["fields"] = self.get_fields()
         return ret
 
 
@@ -39,7 +64,7 @@ class Launch(Models):
         "success": 'BOOLEAN',
         "rocket": 'TEXT NOT NULL',
         "details": 'TEXT',
-        "launch_as_json": 'JSONB NOT NULL'
+        "data_as_json": 'JSONB NOT NULL'
     }
     id: str
     name: str
@@ -47,4 +72,15 @@ class Launch(Models):
     success: bool
     rocket: str
     details: Optional[str]
+
+    def get_all_values(self) -> list:
+        return [
+            self.id,
+            self.name,
+            self.date_utc,
+            self.success,
+            self.rocket,
+            self.details,
+            self._raw_json  
+        ]
 
