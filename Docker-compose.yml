@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15
+    container_name: postgres
+    restart: always
+    environment:
+      POSTGRES_USER: space_user
+      POSTGRES_PASSWORD: space_pass
+      POSTGRES_DB: spacex_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+
+  trino:
+    image: trinodb/trino:latest
+    container_name: trino
+    restart: always
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./trino/etc:/etc/trino
+
+  python-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: python-dev
+    volumes:
+      - .:/app
+    working_dir: /app
+    command: tail -f /dev/null  # Keeps container running for VS Code to attach
+
+volumes:
+  pg_data:

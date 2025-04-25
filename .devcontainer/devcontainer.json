@@ -1,0 +1,11 @@
+{
+    "name": "SpaceX Python Dev",
+    "dockerComposeFile": "../docker-compose.yml",
+    "service": "python-dev",
+    "workspaceFolder": "/app",
+    "extensions": ["ms-python.python"],
+    "settings": {
+      "python.defaultInterpreterPath": "/usr/local/bin/python"
+    }
+  }
+  

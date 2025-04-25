@@ -1,0 +1,29 @@
+import requests
+from models import Launch
+from typing import Optional
+from db_server import dBServer
+
+def fetch_latest_spacex_launch(url: str) -> Optional["Launch"]:
+    launch = None
+    response = requests.get(url)
+    if response.status_code == 200:
+        data: dict = response.json()
+        launch = Launch.load_from_json(data)
+    else:
+        print("Failed to fetch SpaceX data:", response.status_code)
+    return launch
+
+def main():
+    url = "https://api.spacexdata.com/v5/launches/latest"
+    db_writer = dBServer()
+
+
+
+    launch = fetch_latest_spacex_launch(url=url)
+    launch_table_configuration_data = launch.get_data_to_create_sql_table()
+    db_writer.create_table_in_db(launch_table_configuration_data)
+
+
+
+if __name__ == "__main__":
+    main()
