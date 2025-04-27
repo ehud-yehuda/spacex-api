@@ -1,20 +1,20 @@
 from dataHolder.data_holder_interface import dataHolderInterface
-from dataHolder.models import Launch
-from dataclasses import dataclass, field
-import time
+from dataclasses import dataclass
+from datetime import datetime
+from typing import ClassVar
 
 
 @dataclass
 class aggregateData(dataHolderInterface):
     table_name: str = "aggregate_data_table"
-    columns_type: dict = field(default_factory=lambda: {
+    columns_type: ClassVar[dict] = {
         "timestamp": 'TIMESTAMPTZ PRIMARY KEY',
         "total_launches": 'INTEGER NOT NULL',
         "successful_launches": 'INTEGER NOT NULL',
         "avg_payload_mass": 'NUMERIC',
         "avg_launch_delay_minutes": 'NUMERIC',
         "data_as_json": 'JSONB NOT NULL'
-    })
+    }
     total_launches: int = 0
     total_successfull_launches: int = 0
     avg_payload_mass: float = 0.0
@@ -59,7 +59,7 @@ class aggregateData(dataHolderInterface):
     
     def get_all_values(self) -> list:
         return [
-            time.time(),
+            datetime.now(),
             self.total_launches,
             self.total_successfull_launches,
             self.avg_payload_mass,

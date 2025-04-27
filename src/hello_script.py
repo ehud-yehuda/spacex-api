@@ -19,7 +19,7 @@ def main():
         new_launch = res["launch"]
         if new_launch:
             aggregation_data = data_aggregator.extract_data_from_launch_and_update(res)
-            db_writer.insert_data_into_table(aggregation_data)
+            db_writer.insert_data_into_table(aggregation_data, use_ignore_conflicts=False)
         time.sleep(1.0)
 
 

@@ -21,22 +21,28 @@ class dBServer:
         types = data["table_columns_types"]
         self._create_table(table_name=table_name, fields=fields, types=types)
     
-    def insert_data_into_table(self, data:dict):
+    def insert_data_into_table(self, data:dict, use_ignore_conflicts=True):
         table_name = data["table_name"]
         fields = data["fields"]
         values = data["values"]
-        self._write_data_in_db(table_name=table_name, fields=fields, values=values)
+        self._write_data_in_db(table_name=table_name, fields=fields, values=values, use_ignore_conflicts=use_ignore_conflicts)
         return
 
-    def _write_data_in_db(self, table_name: str, fields: list, values: list):
+    def _write_data_in_db(self, table_name: str, fields: list, values: list, use_ignore_conflicts:bool=True):
         placeholders = ', '.join(['%s'] * len(fields))
         columns = ', '.join(fields)
 
-        insert_sql = f"""
-        INSERT INTO {table_name} ({columns})
-        VALUES ({placeholders})
-        ON CONFLICT (id) DO NOTHING;
-        """
+        if use_ignore_conflicts:
+            insert_sql = f"""
+            INSERT INTO {table_name} ({columns})
+            VALUES ({placeholders})
+            ON CONFLICT (id) DO NOTHING;
+            """
+        else:
+            insert_sql = f"""
+            INSERT INTO {table_name} ({columns})
+            VALUES ({placeholders});
+            """
 
         # Convert date to datetime
         if 'date_utc' in fields:

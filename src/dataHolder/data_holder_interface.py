@@ -3,7 +3,6 @@ class dataHolderInterface():
     columns_type: dict = {
         "data_as_json": 'JSONB NOT NULL'
     }
-    _raw_json: dict
 
     def get_columns_types(self):
         return list(self.columns_type.values())

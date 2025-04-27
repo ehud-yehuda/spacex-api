@@ -6,7 +6,7 @@ from enum import Enum
 
 class Api(Enum):
     launch_url = "https://api.spacexdata.com/v5/launches"
-    payloads_url = f"https://api.spacexdata.com/v5/payloads"
+    payloads_url = "https://api.spacexdata.com/v4/payloads"
 
     def get(self):
         return self.value
@@ -49,7 +49,7 @@ class apiReader:
         response = requests.get(url)
         
         if response.status_code == 404:
-            print(f"❌ ID {launch_id} not found (404). Skipping.")
+            print(f"❌ ID {launch_id} not found (404). Skipping, check url ...")
             return None
 
         if response.status_code == 200:
