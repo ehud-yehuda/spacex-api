@@ -37,9 +37,11 @@ class aggregateData(dataHolderInterface):
         ret = self.get_data_dict_to_insert_sql_table()
         return ret
 
-    def extract_data_from_launch_and_update(self, launch_obj: Launch) -> dict:
+    def extract_data_from_launch_and_update(self, data_dict: dict) -> dict:
+        launch_obj = data_dict["launch"]
+        
         is_successfull = launch_obj.success
-        payload_mass = launch_obj.get_payload_mass()
+        payload_mass = data_dict["avg_pl_mass"]
         delay_time = launch_obj.get_launch_delay()
         launch_id = launch_obj.id
         ret = self.update(is_successfull=is_successfull,
