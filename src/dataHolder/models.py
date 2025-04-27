@@ -1,11 +1,12 @@
 from pydantic import BaseModel, ValidationError
-from typing import Optional
-from data_holder_interface import dataHolderInterface
+from typing import Optional, ClassVar
+from dataHolder.data_holder_interface import dataHolderInterface
+from datetime import datetime
 
 
 class Launch(dataHolderInterface, BaseModel):
-    table_name: str = "launches"
-    columns_type: dict = {
+    table_name: ClassVar[str] = "launches"
+    columns_type: ClassVar[dict] = {
         "id": 'TEXT PRIMARY KEY',
         "name": 'TEXT NOT NULL',
         "date_utc": 'TIMESTAMPTZ NOT NULL',
@@ -20,12 +21,32 @@ class Launch(dataHolderInterface, BaseModel):
     success: bool
     rocket: str
     details: Optional[str]
+    data_as_json: Optional[dict] = None
+
+    def get_launch_delay(self) -> float:
+        delay_time = -1.0
+        actual_time_launching = self.data_as_json.get("date_utc")
+        launch_time_scheduele = self.data_as_json.get("date_local")
+
+        if actual_time_launching and launch_time_scheduele:
+            dt_utc = datetime.fromisoformat(actual_time_launching.replace("Z", "+00:00"))
+            dt_local = datetime.fromisoformat(launch_time_scheduele.replace("Z", "+00:00"))
+            
+            delay_time = (dt_utc - dt_local).total_seconds() / 60.0  # Delay in minutes
+        else:
+            print("⚠️ Missing 'date_utc' or 'date_local' in API data, setting delay_time=0")
+        return delay_time
+    
+    def get_payload_mass(self, default_value=-1.0):
+        #Todo this wrong
+        return self.data_as_json.get("payload_mass_kg", default_value) 
 
     @classmethod
     def load_from_json(cls, data_as_json: dict) -> Optional["Launch"]:
         try:
-            cls._raw_json = data_as_json
-            return cls.model_validate(data_as_json)
+            obj = cls.model_validate(data_as_json)
+            obj.data_as_json = data_as_json  # Attach _raw_json to the object, not class
+            return obj
         except ValidationError as e:
             print("Models::load_from_json(), Data is not valid")
             print(e)
@@ -39,6 +60,11 @@ class Launch(dataHolderInterface, BaseModel):
             self.success,
             self.rocket,
             self.details,
-            self._raw_json  
+            self.data_as_json  
         ]
+    
+    @staticmethod
+    def get_all_ids_query():
+        return Launch.table_name, "id"
+
 

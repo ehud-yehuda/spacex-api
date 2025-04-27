@@ -1,7 +1,8 @@
-from data_holder_interface import dataHolderInterface
-from models import Launch
+from dataHolder.data_holder_interface import dataHolderInterface
+from dataHolder.models import Launch
 from dataclasses import dataclass, field
 import time
+
 
 @dataclass
 class aggregateData(dataHolderInterface):
@@ -21,8 +22,6 @@ class aggregateData(dataHolderInterface):
     total_payload_mass: float = 0.0
     total_delay: float = 0.0
 
-     
-
     def update(self, is_successfull: bool, payload_mass: float, delay_time:float, launch_id: int) -> dict:
         self.total_launches += 1
         self.total_successfull_launches += 1 if is_successfull else 0
@@ -40,8 +39,8 @@ class aggregateData(dataHolderInterface):
 
     def extract_data_from_launch_and_update(self, launch_obj: Launch) -> dict:
         is_successfull = launch_obj.success
-        payload_mass = launch_obj.data_as_json.get("payload_mass_kg", 0.0) #depend on client decision
-        delay_time = launch_obj.data_as_json.get("date_utc", 0.0)  - launch_obj.data_as_json.get("date_local", -1.0)#depend on client decision
+        payload_mass = launch_obj.get_payload_mass()
+        delay_time = launch_obj.get_launch_delay()
         launch_id = launch_obj.id
         ret = self.update(is_successfull=is_successfull,
                     payload_mass=payload_mass,

@@ -14,11 +14,12 @@ class dataHolderInterface():
     def get_columns_names(self):
         return list(self.columns_type.keys())
     
-    def get_data_to_create_sql_table(self):
+    @classmethod
+    def get_data_to_create_sql_table(cls):
         ret = {}
-        ret["table_name"] = self.table_name
-        ret["table_columns_names"] = self.get_columns_names()
-        ret["table_columns_types"] = self.get_columns_types()
+        ret["table_name"] = cls.table_name
+        ret["table_columns_names"] = cls.get_columns_names(cls)
+        ret["table_columns_types"] = cls.get_columns_types(cls)
         return ret
     
     def get_all_values(self) -> list:

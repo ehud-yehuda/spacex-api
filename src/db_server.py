@@ -9,6 +9,11 @@ class dBServer:
     host: str="postgres"
     port: int=5432
 
+    def create_tables(self, list_of_table_configurations):
+        for data_obj in list_of_table_configurations:
+            conf = data_obj.get_data_to_create_sql_table()    
+            self.create_table_in_db(conf)
+        return
     
     def create_table_in_db(self, data: dict):
         table_name = data["table_name"]
@@ -43,25 +48,39 @@ class dBServer:
             idx = fields.index('data_as_json')
             values[idx] = json.dumps(values[idx])
 
-        self._run_operation_on_db(insert_sql, values)
+        self._run_write_operation_on_db(insert_sql, values)
     
     def _drop_table_if_exists(self, table_name: str):
         drop_sql = f"DROP TABLE IF EXISTS {table_name};"
-        self._run_operation_on_db(drop_sql)
+        self._run_write_operation_on_db(drop_sql)
         
-    def _run_operation_on_db(self, query: str, values=None):
-        conn = psycopg2.connect(
+    def _run_write_operation_on_db(self, query: str, values=None):
+        with psycopg2.connect(
             dbname=self.dbname,
             user=self.user,
             password=self.password,
             host=self.host,
             port=self.port
-        )
-        cur = conn.cursor()
-        cur.execute(query, values)
-        conn.commit()
-        cur.close()
-        conn.close()
+        ) as conn:
+            with conn.cursor() as cur:
+                cur.execute(query, values)
+                conn.commit()
+            
+    
+    def _run_read_operation_on_db(self, query: str, values=None) -> list:
+        #only support select
+        rows = None
+        with psycopg2.connect(
+            dbname=self.dbname,
+            user=self.user,
+            password=self.password,
+            host=self.host,
+            port=self.port
+        ) as conn:
+            with conn.cursor() as cur:
+                cur.execute(query, values)
+                rows = cur.fetchall()
+        return rows
 
     def _create_table(self, table_name:str, fields:list, types: list):
         command = ','.join([x + ' ' + y for x, y in zip(fields, types)])
@@ -70,6 +89,11 @@ class dBServer:
             {command}
         );
         """
-        self._run_operation_on_db(create_sql)
+        self._run_write_operation_on_db(create_sql)
         
-        print("✅ Table 'launches' ensured.")
+        print(f"✅ Table {table_name} ensured.")
+    
+    def run_query(self, table_name: str, values_as_str) -> list:
+        query = f"SELECT {values_as_str} FROM {table_name};"
+        rows = self._run_read_operation_on_db(query=query)
+        return rows
