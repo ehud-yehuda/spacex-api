@@ -25,15 +25,19 @@ class Launch(dataHolderInterface, BaseModel):
 
 
     def get_launch_delay(self) -> float:
-        delay_time = -1.0
+        delay_time = 0.0
         actual_time_launching = self.data_as_json.get("date_utc")
         launch_time_scheduele = self.data_as_json.get("date_local")
 
-        if actual_time_launching and launch_time_scheduele:
+        if actual_time_launching and launch_time_scheduele:        
             dt_utc = datetime.fromisoformat(actual_time_launching.replace("Z", "+00:00"))
             dt_local = datetime.fromisoformat(launch_time_scheduele.replace("Z", "+00:00"))
-            
+                
             delay_time = (dt_utc - dt_local).total_seconds() / 60.0  # Delay in minutes
+
+                # OPTIONAL: Warn if delay looks suspicious
+            if delay_time < -120 or delay_time > 120:
+                print(f"⚠️ Warning: Launch delay unusually large: {delay_time:.2f} minutes")
         else:
             print("⚠️ Missing 'date_utc' or 'date_local' in API data, setting delay_time=0")
         return delay_time

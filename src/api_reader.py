@@ -106,6 +106,24 @@ class LaunchSyncManager:
             res = None
         return res
     
+    def update_postgre_in_new_launch_and_get_pl_mass(self, new_launch: Launch) -> float:
+        # 3. Insert the new launch
+        data = new_launch.get_data_dict_to_insert_sql_table()
+        self.db_writer.insert_data_into_table(data)
+
+        print(f"✅ Launch '{new_launch.name}' inserted successfully.")
+
+        # Extract payload IDs
+        payload_ids = new_launch.data_as_json.get("payloads", [])
+        payloads = self.fetch_payloads(payload_ids=payload_ids)
+        avg_pl_mass = self.get_payloads_avg_mass(payloads)
+        
+        for _payload in payloads:
+            _d = _payload.get_data_dict_to_insert_sql_table()
+            self.db_writer.insert_data_into_table(_d)
+        return avg_pl_mass
+
+    
     def sync_latest_launch(self) -> dict:
         ret = {
             "launch": None,
@@ -122,21 +140,7 @@ class LaunchSyncManager:
             return ret
         
         print(f"🚀 New Launch '{new_launch.name}' detected, syncing to database...")
-
-        # 3. Insert the new launch
-        data = new_launch.get_data_dict_to_insert_sql_table()
-        self.db_writer.insert_data_into_table(data)
-
-        print(f"✅ Launch '{new_launch.name}' inserted successfully.")
-
-        # Extract payload IDs
-        payload_ids = new_launch.data_as_json.get("payloads", [])
-        payloads = self.fetch_payloads(payload_ids=payload_ids)
-        avg_pl_mass = self.get_payloads_avg_mass(payloads)
-        
-        for _payload in payloads:
-            _d = _payload.get_data_dict_to_insert_sql_table()
-            self.db_writer.insert_data_into_table(_d)
+        avg_pl_mass = self.update_postgre_in_new_launch_and_get_pl_mass(new_launch=new_launch)
 
         ret["launch"] = new_launch
         ret["avg_pl_mass"] = avg_pl_mass
@@ -159,4 +163,16 @@ class LaunchSyncManager:
         payload_masses = [payload.get_payload_mass() for payload in list_of_payloads]
         avg_mass = sum(payload_masses) / len(payload_masses) if payload_masses else 0.0
         return avg_mass
+    
+    def launches_generator(self):
+        launches = self.launch_api_reader.fetch_all()
+
+        for _launch in launches:
+            ret = {}
+            avg_pl_mass = self.update_postgre_in_new_launch_and_get_pl_mass(new_launch=_launch)
+            ret["launch"] = _launch
+            ret["avg_pl_mass"] = avg_pl_mass
+            yield ret
+
+
         

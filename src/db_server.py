@@ -1,6 +1,7 @@
 import psycopg2
 import json
 from datetime import datetime
+import pandas as pd
 
 class dBServer:
     dbname: str="spacex_db"
@@ -103,3 +104,21 @@ class dBServer:
         query = f"SELECT {values_as_str} FROM {table_name};"
         rows = self._run_read_operation_on_db(query=query)
         return rows
+    
+    def read_query_to_dataframe(self, query:str)-> pd.DataFrame:
+        try:
+            with psycopg2.connect(
+                dbname=self.dbname,
+                user=self.user,
+                password=self.password,
+                host=self.host,
+                port=self.port
+            ) as conn:
+                df = pd.read_sql_query(query, conn)
+                return df
+        except (psycopg2.OperationalError, psycopg2.ProgrammingError) as e:
+            print(f"❌ Known DB error: {e}")
+            return pd.DataFrame()
+        except psycopg2.Error as e:
+            print(f"❌ General DB error: {e}")
+            return pd.DataFrame()
